@@ -1,305 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Scraper</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <title>WebSocket and Upload Counts Viewer</title>
     <style>
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: Arial, sans-serif;
+            background-color: #282c34;
+            color: white;
+            padding: 20px;
             margin: 0;
-            background: #f7f9fc;
-            scroll-behavior: smooth;
-        }
-
-        .header {
-            background: #141414;
-            color: white;
-            padding: 1px 1%;
             display: flex;
-            align-items: center;
-            position: relative;
+            flex-direction: row;
+            justify-content: space-between;
+            gap: 20px;
         }
-
-        .header-left {
-            flex: 1;
-            text-align: left;
-        }
-
-        .header-center {
-            text-align: center;
+        #log-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
             flex: 1;
         }
-
-        .header-center i {
-            font-size: 2em;
-        }
-
-        .header-nav {
-            display: flex;
-            gap: 10px;
-            flex: 1;
-            justify-content: center;
-        }
-
-        .header-nav a {
-            color: white;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 1.1em;
-            transition: color 0.3s ease;
-        }
-
-        .header-nav a:hover {
-            color: #e74c3c;
-        }
-
-        .main-container {
-            display: flex;
-            margin: 20px;
-        }
-
-        .hero {
-            background: #2f2f2f;
-            color: white;
-            text-align: center;
-            padding: 80px 20px;
-            max-width: 69%;
+        .console {
+            width: 100%;
+            height: 250px;
+            background-color: #1e1e1e;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+            color: lightgreen;
+            font-family: monospace;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
             box-sizing: border-box;
         }
-
-        .hero h2 {
-            font-size: 1.8em;
-            margin: 0;
-            animation: fadeInUp 1s ease-out;
-        }
-
-        .hero p {
+        #upload-counts {
             font-size: 1em;
-            margin: 20px 0;
-            animation: fadeInUp 1.2s ease-out;
-        }
-
-        .hero .more-info {
-            font-size: 0.9em;
-            color: #ecf0f1;
-            line-height: 1.4;
-        }
-
-        .btn {
-            background: #e74c3c;
+            border: 1px solid #444;
+            padding: 10px;
+            width: 220px;
+            height: 521px;
+            overflow-y: auto;
+            background-color: #333;
             color: white;
-            padding: 10px 20px;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-            border-radius: 5px;
-            transition: background 0.3s ease;
-            animation: fadeInUp 1.4s ease-out;
+            box-sizing: border-box;
         }
-
-        .btn:hover {
-            background: #c0392b;
+        .file-entry {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
         }
-
-        .features {
-            background: #ff4000;
-            color: white;
-            padding: 10px; /* Reduced padding */
-            margin-left: 10px;
-            flex: 1;
-            max-width: 10%; /* Reduced width */
+        .danger-log {
+            color: red;
+            font-weight: bold;
         }
-
-        .feature {
-            text-align: center;
-            margin-bottom: 15px; /* Reduced margin */
+        .console-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.5em; /* Increase the font size here */
         }
-
-        .feature i {
-            font-size: 1.5em; /* Reduced icon size */
-            color: #34495e;
-            animation: fadeIn 1s ease-out;
+        .new-count {
+            font-weight: bold;
+            position: relative;
         }
-
-        .feature h3 {
-            font-size: 1.1em; /* Reduced heading size */
-            margin: 5px 0;
-            animation: fadeInUp 1.1s ease-out;
-        }
-
-        .feature p {
-            color: #212121;
-            font-size: 0.9em; /* Reduced font size */
-            animation: fadeInUp 1.2s ease-out;
-        }
-
-        .feature:hover {
-            transform: translateY(-3px); /* Reduced hover effect */
-        }
-
-        .copyright {
+        .new-count:before {
+            content: "";
             position: absolute;
-            bottom: 20px;
-            text-align: center;
-            font-size: 0.9em;
-            color: gray;
-            margin-top: 20px 0;
-        }
-
-        @keyframes fadeInUp {
-            0% {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeIn {
-            0% {
-                opacity: 0;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
-
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-
-        li {
-            margin: 5px 0;
-        }
-
-        button {
-            margin-top: 5px;
-        }
-
-        textarea {
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 100px;
-            margin-top: 10px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .new-count.new-data:before {
+            opacity: 1;
+            animation: flash 0.5s ease;
+        }
+        @keyframes flash {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
         }
 
-        /* Additional CSS */
-        body {
-            background-color: black;
-            color: black;
+        /* Media queries for mobile devices */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                padding: 10px;
+            }
+            #log-container {
+                flex-direction: column;
+            }
+            .console {
+                height: 200px; /* Adjust height for smaller screens */
+            }
+            #upload-counts {
+                width: 100%; /* Full width for mobile */
+                height: auto; /* Adjust height for content */
+            }
+            .file-entry {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .file-entry span {
+                display: block;
+                margin-bottom: 5px;
+            }
         }
 
-        ul {
-            list-style-type: none;
-            padding: 0;
-            color: black;
-        }
-
-        li {
-            margin: 5px 0;
-        }
-
-        button {
-            margin-top: 5px;
-            background-color: black;
-            color: black;
-            border: 1px solid black;
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-
-        textarea {
-            width: 40%;
-            height: 10px;
-            margin-top: 5px;
-            background-color: black;
-            color: black;
-            border: 1px solid black;
-            padding: 5px;
-        }
-
-        textarea::placeholder {
-            color: black;
-        }
-
-        h4 {
-            color: gray;
-        }
-
-        h6 {
-            color: black;
+        @media (max-width: 480px) {
+            .file-entry {
+                font-size: 0.8em; /* Smaller font size for very small screens */
+            }
         }
     </style>
 </head>
-
 <body>
-    <div class="header">
-        <div class="header-left">
-            <h1>Email Scraper</h1>
+    <div id="log-container">
+        <div id="danger-log" class="console">
+            <div class="console-title">DANGER Logs</div>
         </div>
-        <div class="header-center">
-            <i class="fas fa-envelope"></i> <!-- Example icon -->
-        </div>
-        <div class="header-nav">
-            <a href="https://deva-astro.github.io/Email-Scraper/">Home</a>
-            <a href="https://deva-astro.github.io/Email-Scraper/">Features</a>
-            <a href="https://deva-astro.github.io/Email-Scraper/">Pricing</a>
-            <a href="https://deva-astro.github.io/Email-Scraper/">Contact</a>
+        <div id="general-log" class="console">
+            <div class="console-title">WebSocket Logs</div>
         </div>
     </div>
 
-    <div class="main-container">
-        <!-- Hero Section -->
-        <div class="hero" id="home">
-            <h2>Discover the Power of Email Scraping</h2>
-            <p>Extract emails from websites with ease and precision. Our Email Scraper is designed to help you gather valuable contact information quickly and efficiently, making it easier to connect with potential leads or manage your outreach efforts.</p>
-            <div class="more-info">
-                <p><strong>Key Features:</strong></p>
-                <ul>
-                    <li>Accurate extraction of email addresses from various types of websites.</li>
-                    <li>User-friendly interface for seamless operation.</li>
-                    <li>Customizable scraping options to suit different needs.</li>
-                    <li>Regular updates to improve performance and adapt to changes in website structures.</li>
-                </ul>
-                <p>Whether you’re looking to build a targeted email list, conduct research, or streamline your data collection process, our Email Scraper provides the tools you need to get the job done efficiently.</p>
-            </div>
-            <button class="btn">Get Started</button>
+    <div id="upload-counts">
+        <h2>Upload Counts</h2>
+        <div id="dataI" class="file-entry">
+            <span>DataI: Total: <span id="total-dataI">0</span></span>
+            <span id="new-dataI" class="new-count">New: 0</span>
         </div>
-
-        <!-- Scrambled Text Section -->
-        <div id="scrambled-text" class="hero" style="flex: 1; background: #2f2f2f; color: white; padding: 150px 20px; max-width: 400px; text-align: left;">
-            <p>.com.net.org.gov.int.edu.co.mil.biz.ru.uk.au.in.de.ir.ca.info.us.me.cn</p><p>cmglovesvn@hcm.com.vn,jayceecsapp@gmail.com,carroll@mail.utexas.edu,joedolce58@gmail.com,osteriainconfusione@gmail.com,yu610682@yahoo.com.tw,hdguofeng@126.com,darallouche@gmail.com,sonja.fox@gtservicing.com,biuro.sanocki@gmail.com,soberperv@gmail.com,esinergenc@gmail.com,empirefireworks1@gmail.com,arthurgulddesign@gmail.com,jean.painter@gmail.com,gothicsally@gmail.com,terryneeley17@gmail.com,rneeley@email.com,terrick1981@bellsouth.net,bpkly22@gmail.com,tpkly22@gmail.com,unionstreettaproom@gmail.com,pcoutant@att.net,elise.jardine@live.com,nmolea@columbus.rr.com,centrycomedy@gmail.com,d.ruiz@schra.us,patysu12@gmail.com,ari.pierce@gmail.com,karenpierce12@gmail.com,jmwijks@gmail.com,vergara@gmail.com,forestlaineexcavation@gmail.com,mvancleave@aquaterra-env.com,mrr0530@aol.com,drhcinyiama@gmail.com,ericbernardruiz@gmail.com,ashleyliles1@yahoo.com,el_condenado_caballo@yahoo.com,esther.torres89@gmail.com</p><p>chengmo@udel.edu,natasj45@gmail.com,natasha.johnson@stdavids.commarykatlyn@christiantowersofgallation.org,natasha.dobrinen@du.edu,natasha-mickel@ouhsc.edusbrooks@irexcorp.com,janchristen@utilitykeystone.com,amywothers@yahoo.com,natasha.dimitrienko@oliverwyman.com</p><p>koby.smith@gmail.com,kdsmith2@travelers.com,debschirm@gmail.com,compgenie.hp@gmail.comg,natasha.dobrinen@du.edu,natasha-mickel@ouhsc.edusbrooks@irexcorp.com,janchristen@utilitykeystone.com,amywothers@yahoo.com,natasha.dimitrienko@oliverwyman.com</p><p>byers@stevenscollege.edu,joshua.eugene.rivers@gmail.com,joshualthomas@gmail.comjohnson@stdavids.commarykatlyn@christiantowersofgallation.org,natasha.dobrinen@du.edu,natasha-mickel@ouhsc.edusbrooks@irexcorp.com,janchristen@utilitykeystone.com,amywothers@yahoo.com,natasha.dimitrienko@oliverwyman.com</p><p>fairbanks346@gmail.com,tenasmith.tms@gmail.com,scottsmith8624@yahoo.com,jwhite-smith@bodymap.orgc.edusbrooks@irexcorp.com,janchristen@utilitykeystone.com,amywothers@yahoo.com,natasha.dimitrienko@oliverwyman.com</p><p>bellard@ads.lu.com,leigh.cherry4@gmail.comjwhite-smith@bodymap.orgc.edusbrooks@irexcorp.com,janchristen@utilitykeystone.com,amywothers@yahoo.com,natasha.dimitrienko@oliverwyman.com</p><p>andy@platipus.us,andy.brown@traviscountytx.gov,dwilson117@gmail.com,jwhite-smith@bodymap.orgc.edusbrooks@irexcorp.com,janchristen@utilitykeystone.com,amywothers@yahoo.com,natasha.dimitrienko@oliverwyman.com</p><p>tenasmith.tms@gmail.com,scottsmith8624@yahoo.com,jwhite-smith@bodymap.orgnatashamickel@ouhsc.edusbrooks@irexcorp.com,janchriste.orgc.edusbrooks@irexcorp.com,janchristen@utilitykeystone.com,amywothers@yahoo.com,natasha.dimitrienko@oliverwyman.com</p><p>kdsmith2@travelers.com,debschirm@gmail.com,compgenie.hp@gmail.comedusbrooks@irexcorp.com,janchristen@utilitykeystone.com,amywothers@yahoo.com,natasha.dimitrienko@oliverwyman.com</p><p>yu610682@yahoo.com.tw,hdguofeng@126.com,darallouche@gmail.com,sonja.fox@gtservicing.com,biuro.sanocki@gmail.com,soberperv@gmail.com,esinergenc@gmail.com,empirefireworks1@gmail.comoliverwyman.com</p><p>janchristen@utilitykeystone.com,amywothers@yahoo.com,natasha.dimitrienko@oliverwyman.comjanchriste.orgc.edusbrooks@irexcorp.com,janchristen@utilitykeystone.com,amywothers@yahoo.com,natasha.dimitrienko@oliverwyman.com</p>
+        <div id="dataII" class="file-entry">
+            <span>DataII: Total: <span id="total-dataII">0</span></span>
+            <span id="new-dataII" class="new-count">New: 0</span>
         </div>
-
-        <!-- Features Section -->
-        <div class="features" id="features">
-            <div class="feature">
-                <i class="fas fa-envelope"></i>
-                <h3>Email Extraction</h3>
-                <p>Quickly gather emails from websites and export them for your needs.</p>
-            </div>
-            <div class="feature">
-                <i class="fas fa-shield-alt"></i>
-                <h3>Secure & Safe</h3>
-                <p>Your data is protected with top-notch security protocols.</p>
-            </div>
-            <div class="feature">
-                <i class="fas fa-cogs"></i>
-                <h3>Easy Integration</h3>
-                <p>Seamlessly integrate with your workflow and automation tools.</p>
-            </div>
-
-            <div class="copyright">
-                © 2024 Email Scraper. All Rights Reserved.
-            </div>
+        <div id="dataIII" class="file-entry">
+            <span>DataIII: Total: <span id="total-dataIII">0</span></span>
+            <span id="new-dataIII" class="new-count">New: 0</span>
+        </div>
+        <div id="dataIV" class="file-entry">
+            <span>DataIV: Total: <span id="total-dataIV">0</span></span>
+            <span id="new-dataIV" class="new-count">New: 0</span>
+        </div>
+        <div id="dataV" class="file-entry">
+            <span>DataV: Total: <span id="total-dataV">0</span></span>
+            <span id="new-dataV" class="new-count">New: 0</span>
+        </div>
+        <div id="dataVI" class="file-entry">
+            <span>DataVI: Total: <span id="total-dataVI">0</span></span>
+            <span id="new-dataVI" class="new-count">New: 0</span>
+        </div>
+        <div id="dataVII" class="file-entry">
+            <span>DataVII: Total: <span id="total-dataVII">0</span></span>
+            <span id="new-dataVII" class="new-count">New: 0</span>
+        </div>
+        <div id="dataVIII" class="file-entry">
+            <span>DataVIII: Total: <span id="total-dataVIII">0</span></span>
+            <span id="new-dataVIII" class="new-count">New: 0</span>
+        </div>
+        <div id="dataIX" class="file-entry">
+            <span>DataIX: Total: <span id="total-dataIX">0</span></span>
+            <span id="new-dataIX" class="new-count">New: 0</span>
+        </div>
+        <div id="dataX" class="file-entry">
+            <span>DataX: Total: <span id="total-dataX">0</span></span>
+            <span id="new-dataX" class="new-count">New: 0</span>
         </div>
     </div>
 
@@ -326,22 +194,87 @@
             }, 2000); // Scramble for 2 seconds
         }
 
-        // Wait for DOM content to be loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            const scrambledTextDiv = document.getElementById('scrambled-text');
-            const paragraphs = scrambledTextDiv.getElementsByTagName('p');
+        const ws = new WebSocket('wws://adapted-possum-partially.ngrok-free.app/ws');
 
-            for (let p of paragraphs) {
-                const originalText = p.innerHTML;
-                scrambleText(p, originalText);
+        const totalCounts = {
+            dataI: 0,
+            dataII: 0,
+            dataIII: 0,
+            dataIV: 0,
+            dataV: 0,
+            dataVI: 0,
+            dataVII: 0,
+            dataVIII: 0,
+            dataIX: 0,
+            dataX: 0
+        };
+
+        function applyColorBasedOnCount(element, count) {
+            if (count < 2000) {
+                element.style.color = 'red';
+            } else if (count < 5000) {
+                element.style.color = 'purple';
+            } else if (count < 10000) {
+                element.style.color = 'orange';
+            } else if (count < 15000) {
+                element.style.color = 'green';
+            } else {
+                element.style.color = 'blue';
             }
-        });
+        }
 
-        document.querySelector('.btn').addEventListener('click', function() {
-            alert('Getting Started!');
-        });
+        function animateNumber(element, start, end) {
+            let startTime = null;
+            const duration = 500; // Animation duration in ms
+
+            function step(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = Math.min((timestamp - startTime) / duration, 1);
+                const currentValue = Math.floor(progress * (end - start) + start);
+                element.textContent = currentValue;
+                if (progress < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    element.textContent = end;
+                }
+            }
+
+            requestAnimationFrame(step);
+        }
+
+        function scrollToBottom(element) {
+            element.scrollTop = element.scrollHeight;
+        }
+
+        ws.onopen = () => {
+            console.log('WebSocket connection opened.');
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Received data:', data);
+
+            for (const [key, value] of Object.entries(data)) {
+                if (key.startsWith('new_')) {
+                    const id = key.substring(4);
+                    const newCount = document.getElementById('new-' + id);
+                    const totalCount = document.getElementById('total-' + id);
+
+                    if (newCount && totalCount) {
+                        const newValue = parseInt(value);
+                        totalCounts[id] += newValue;
+                        applyColorBasedOnCount(totalCount, totalCounts[id]);
+                        animateNumber(totalCount, totalCounts[id] - newValue, totalCounts[id]);
+                        scrambleText(newCount, newValue);
+                        scrollToBottom(newCount.parentElement.parentElement);
+                    }
+                }
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('WebSocket connection closed.');
+        };
     </script>
 </body>
-
 </html>
-
