@@ -35,7 +35,7 @@
             box-sizing: border-box;
         }
         #upload-counts {
-            font-size: 1em;
+            font-size: 0.9em;
             border: 1px solid #444;
             padding: 10px;
             width: 220px;
@@ -57,7 +57,7 @@
         .console-title {
             font-weight: bold;
             margin-bottom: 10px;
-            font-size: 1.5em; /* Increase the font size here */
+            font-size: 1.3em;
         }
         .new-count {
             font-weight: bold;
@@ -194,7 +194,7 @@
             }, 2000); // Scramble for 2 seconds
         }
 
-        const ws = new WebSocket('wws://adapted-possum-partially.ngrok-free.app/ws');
+        const ws = new WebSocket('wss://bird-sure-teal.ngrok-free.app/ws');
 
         const totalCounts = {
             dataI: 0,
@@ -246,34 +246,59 @@
             element.scrollTop = element.scrollHeight;
         }
 
-        ws.onopen = () => {
-            console.log('WebSocket connection opened.');
-        };
+        ws.onmessage = function(event) {
+            const generalLog = document.getElementById('general-log');
+            const dangerLog = document.getElementById('danger-log');
 
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            console.log('Received data:', data);
+            const newLog = document.createElement('div');
+            newLog.textContent = event.data;
 
-            for (const [key, value] of Object.entries(data)) {
-                if (key.startsWith('new_')) {
-                    const id = key.substring(4);
-                    const newCount = document.getElementById('new-' + id);
-                    const totalCount = document.getElementById('total-' + id);
+            // Scramble text before showing the actual content
+            scrambleText(newLog, event.data);
 
-                    if (newCount && totalCount) {
-                        const newValue = parseInt(value);
-                        totalCounts[id] += newValue;
-                        applyColorBasedOnCount(totalCount, totalCounts[id]);
-                        animateNumber(totalCount, totalCounts[id] - newValue, totalCounts[id]);
-                        scrambleText(newCount, newValue);
-                        scrollToBottom(newCount.parentElement.parentElement);
-                    }
+            try {
+                const data = JSON.parse(event.data);
+                const [updatedFileKey] = Object.keys(data);
+                const newEntries = data[updatedFileKey].new;
+
+                totalCounts[updatedFileKey] += newEntries;
+
+                const totalElement = document.getElementById(`total-${updatedFileKey}`);
+                const newElement = document.getElementById(`new-${updatedFileKey}`);
+
+                if (totalElement && newElement) {
+                    animateNumber(totalElement, parseInt(totalElement.textContent), totalCounts[updatedFileKey]);
+                    newElement.textContent = `${newEntries}`;
+                    applyColorBasedOnCount(newElement, newEntries);
+
+                    // Trigger bounce animation
+                    newElement.classList.add('new-data');
+                    setTimeout(() => newElement.classList.remove('new-data'), 500);
                 }
+            } catch (error) {
+                console.error('Error parsing WebSocket message:', error);
+            }
+
+            if (event.data.includes("DANGER-LOG")) {
+                newLog.classList.add('danger-log');
+                dangerLog.appendChild(newLog);
+                scrollToBottom(dangerLog);
+            } else {
+                generalLog.appendChild(newLog);
+                scrollToBottom(generalLog);
             }
         };
 
-        ws.onclose = () => {
-            console.log('WebSocket connection closed.');
+        ws.onopen = function() {
+            console.log("WebSocket connection opened");
+        };
+
+        ws.onclose = function() {
+            console.log("WebSocket connection closed");
+        };
+
+        ws.onerror = function(error) {
+            console.error("WebSocket error:", error);
         };
     </script>
 </body>
